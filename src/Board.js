@@ -5,6 +5,7 @@ const size = 15;
 
 const Board = () => {
     const [board, setBoard] = React.useState(new Array(size).fill(0).map(row => new Array(size).fill(0)))
+    const [snakeState, setSnakeState] = React.useState('null')
     const [snake, setSnake] = React.useState({
         x: 0,
         y: 0,
@@ -18,17 +19,45 @@ const Board = () => {
         }
     })
 
+    React.useEffect(() => {
+        if (snakeState !== 'null') {
+            const interval = setInterval(() => {
+                if (snakeState === 'right') {
+                    setSnake({ x: snake.x + 1, y: snake.y })
+                } else if (snakeState === 'left') {
+                    setSnake({ x: snake.x - 1, y: snake.y })
+                } else if (snakeState === 'up') {
+                    setSnake({ x: snake.x, y: snake.y - 1 })
+                } else if (snakeState === 'down') {
+                    setSnake({ x: snake.x, y: snake.y + 1 })
+                }
+            }, 400);
+            return () => clearInterval(interval);
+        }
+
+    }, [snakeState, snake.x, snake.y]);
+
     const handleArrowPress = (e) => {
         switch (e.keyCode) {
             case 37: //left
-                return setSnake({ x: snake.x - 1, y: snake.y });
+                setSnake({ x: snake.x - 1, y: snake.y });
+                setSnakeState('left')
+                break;
             case 38: //up
-                return setSnake({ x: snake.x, y: snake.y - 1 });
+                setSnake({ x: snake.x, y: snake.y - 1 });
+                setSnakeState('up')
+                break;
             case 39: //right
-                return setSnake({ x: snake.x + 1, y: snake.y });
+                setSnake({ x: snake.x + 1, y: snake.y });
+                setSnakeState('right')
+                break;
             case 40: //down
-                return setSnake({ x: snake.x, y: snake.y + 1 });
+                setSnake({ x: snake.x, y: snake.y + 1 });
+                setSnakeState('down')
+                break;
         }
+
+        return 0;
     }
 
     return (
