@@ -2,15 +2,31 @@ import React from 'react';
 import styled from 'styled-components';
 
 const size = 30;
+const defaultValues = {
+    board: new Array(size).fill(0).map(row => new Array(size).fill(0)),
+    snakeState: 'null',
+    snakeSize: 0,
+    snakeSpeed: 120,
+    snakeHead: {
+        x: 0,
+        y: 0
+    },
+    tail: [{ x: null, y: null }],
+    food: {
+        x: null,
+        y: null,
+    }
+}
 
 function getRandomInt() {
     return Math.floor(Math.random() * (Math.floor(29) - Math.ceil(0) + 1)) + Math.ceil(0);
 }
 
-const Board = () => {
+const Board = ({ gameState, setGameState }) => {
     const [board, setBoard] = React.useState(new Array(size).fill(0).map(row => new Array(size).fill(0)))
     const [snakeState, setSnakeState] = React.useState('null')
     const [snakeSize, setSnakeSize] = React.useState(0);
+    const [snakeSpeed, setSnakeSpeed] = React.useState(120)
     const [snakeHead, setSnakeHead] = React.useState({
         x: 0,
         y: 0,
@@ -26,19 +42,30 @@ const Board = () => {
         y: null,
     })
 
-    const prevRef = React.useRef()
+    const previousHeadRef = React.useRef()
+    React.useEffect(() => {
+        if (gameState === '-1') {
+            setBoard(defaultValues.board)
+            setSnakeState(defaultValues.snakeState)
+            setSnakeSize(defaultValues.snakeSize)
+            setSnakeSpeed(defaultValues.snakeSpeed)
+            setSnakeHead(defaultValues.snakeHead)
+            setTail(defaultValues.tail)
+            setFood(defaultValues.food)
+            setGameState('0')
+        }
+    }, [gameState])// eslint-disable-line react-hooks/exhaustive-deps
 
     React.useEffect(() => {
-        prevRef.current = snakeHead
+        previousHeadRef.current = snakeHead
         if (snakeSize >= 1) {
             let v = []
-            v.push({ x: prevRef.current.x, y: prevRef.current.y })
+            v.push({ x: previousHeadRef.current.x, y: previousHeadRef.current.y })
             for (let i = 0; i < snakeSize; i++) {
                 v.push(tail[i])
             }
             setTail(v)
         }
-        
     }, [snakeHead.x, snakeHead.y])
 
     React.useEffect(() => {
@@ -49,14 +76,26 @@ const Board = () => {
         if (snakeHead.y === food.y && snakeHead.x === food.x) {
             setSnakeSize(snakeSize + 1)
         }
+        previousHeadRef.current = snakeHead;
+        if (snakeSize >= 1 && calc(previousHeadRef.current.x, previousHeadRef.current.y)) {
+            setGameState('-1')
+        }
     }, [snakeHead.x, snakeHead.y])
 
     React.useEffect(() => {
-        console.log(snakeSize)
-        setFood({
-            x: getRandomInt(),
-            y: getRandomInt()
-        })
+        if (snakeSpeed > 50) {
+            setSnakeSpeed(s => s - 10)
+        } else {
+            setSnakeSpeed(s => s - 3)
+        }
+
+        const x = getRandomInt(), y = getRandomInt()
+        if (!calc(x, y)) {
+            setFood({
+                x: getRandomInt(),
+                y: getRandomInt()
+            })
+        }
     }, [snakeSize])
 
     React.useEffect(() => {
@@ -79,29 +118,34 @@ const Board = () => {
                 } else if (snakeState === 'down') {
                     setSnakeHead({ x: snakeHead.x, y: snakeHead.y + 1 })
                 }
-            }, 50);
+            }, snakeSpeed);
             return () => clearInterval(interval);
         }
 
     }, [snakeState, snakeHead.x, snakeHead.y]);
 
     const handleArrowPress = (e) => {
+        setGameState(snakeSize)
         switch (e.keyCode) {
             case 37: //left
-                // setSnakeHead({ x: snakeHead.x - 1, y: snakeHead.y });
-                setSnakeState('left')
+                if (snakeState !== 'right') {
+                    setSnakeState('left')
+                }
                 break;
             case 38: //up
-                // setSnakeHead({ x: snakeHead.x, y: snakeHead.y - 1 });
-                setSnakeState('up')
+                if (snakeState !== 'down') {
+                    setSnakeState('up')
+                }
                 break;
             case 39: //right
-                // setSnakeHead({ x: snakeHead.x + 1, y: snakeHead.y });
-                setSnakeState('right')
+                if (snakeState !== 'left') {
+                    setSnakeState('right')
+                }
                 break;
             case 40: //down
-                // setSnakeHead({ x: snakeHead.x, y: snakeHead.y + 1 });
-                setSnakeState('down')
+                if (snakeState !== 'up') {
+                    setSnakeState('down')
+                }
                 break;
         }
 
@@ -109,12 +153,14 @@ const Board = () => {
     }
 
     const calc = (ix, iy) => {
+        let bool = false;
         for (let i = 0; i < tail.length; i++) {
             if (ix === tail[i].x && iy === tail[i].y) {
-                return true;
+                bool = true;
+                return bool;
             }
         }
-
+        return bool;
     }
 
     return (
@@ -139,5 +185,6 @@ width: 25px;
 height: 25px;
 display: inline-flex;
 margin: 3px;
+border-radius: 5px;
 background: ${props => props.color};
 `;
